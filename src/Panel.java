@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 class Panel extends JPanel {
     //---------------------Declaração de variáveis--------------------------------
+    public boolean numeracao = false;
     private int contadorPanel = 0; //Conta quantos paineis foram criados
     public boolean existePanel = false; //Verifica se existe algum painel criado
     private JTabbedPane tPane;
@@ -56,11 +57,11 @@ class Panel extends JPanel {
         //-----------------------------------------------
 
         //-----------Elementos do Menu Seleção-----------
-        criaItem("Selecionar Tudo", "selecao", "");
+        criaItem("Selecionar Tudo", "selecao", "selecionarTudo");
         //-----------------------------------------------
 
         //-----------Elementos do Menu Ver-----------
-        criaItem("Numeração de Linhas", "ver", "");
+        criaItem("Numeração de Linhas", "ver", "numeracao");
         ver.add(aparencia);
         criaItem("Modo Claro", "aparencia", "");
         criaItem("Modo Escuro", "aparencia", "");
@@ -201,15 +202,29 @@ class Panel extends JPanel {
                     case "colar" -> elementoItem.addActionListener(new DefaultEditorKit.PasteAction());
                 }
             }
-            case "selecao" -> selecao.add(elementoItem);
-            case "ver" -> ver.add(elementoItem);
+            case "selecao" -> {
+                selecao.add(elementoItem);
+                switch (acao){
+                    case "selecionarTudo" -> elementoItem.addActionListener(e -> listaAreaTexto.get(tPane.getSelectedIndex()).selectAll());
+                }
+            }
+            case "ver" -> {
+                ver.add(elementoItem);
+                switch(acao){
+                    case "numeracao" -> elementoItem.addActionListener(e ->{
+                        numeracao = !numeracao;
+                        Utilidades.verNumeracao(contadorPanel, numeracao, listaAreaTexto, listaScroll);
+                    });
+                }
+            }
+
             case "aparencia" -> aparencia.add(elementoItem);
         }
 
     }
 
 
-    //---------------Métodos utilizados dentro do código----------------------
+    //---------------Métodos utilizados dentro do código da Janela----------------------
     public void createPanel() {
         janela = new JPanel();
 
@@ -222,6 +237,9 @@ class Panel extends JPanel {
 
         janela.add(listaScroll.get(contadorPanel));
         tPane.addTab("title", janela);
+
+        Utilidades.verNumeracaoInicial(numeracao, listaAreaTexto.get(contadorPanel), listaScroll.get(contadorPanel));
+
         tPane.setSelectedIndex(contadorPanel);
 
         contadorPanel++;
