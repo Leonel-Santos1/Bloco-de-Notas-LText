@@ -1,14 +1,8 @@
 import javax.swing.*;
-<<<<<<< HEAD
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-=======
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
->>>>>>> 85a43a6 (Correçao dos arquivos)
 import java.util.ArrayList;
 
 
@@ -68,11 +62,6 @@ class Panel extends JPanel {
         listaScroll = new ArrayList<JScrollPane>();
         //--------------------------
 
-<<<<<<< HEAD
-        creatPanel();
-
-=======
->>>>>>> 85a43a6 (Correçao dos arquivos)
         add(panelMenu);
         add(tPane);
     }
@@ -85,13 +74,6 @@ class Panel extends JPanel {
             case "arquivo" -> {
                 arquivo.add(elementoItem);
                 if (acao.equals("novo")) {
-<<<<<<< HEAD
-                    elementoItem.addActionListener(new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            creatPanel();
-                        }
-=======
                     elementoItem.addActionListener(e -> createPanel());
                 } else if (acao.equals("abrir")) {
                     elementoItem.addActionListener(e -> {
@@ -171,7 +153,6 @@ class Panel extends JPanel {
 
                         }
 
->>>>>>> 85a43a6 (Correçao dos arquivos)
                     });
                 }
             }
@@ -184,11 +165,7 @@ class Panel extends JPanel {
     }
 
 
-<<<<<<< HEAD
-    public void creatPanel() {
-=======
     public void createPanel() {
->>>>>>> 85a43a6 (Correçao dos arquivos)
         janela = new JPanel();
 
         listFile.add(new File(""));
@@ -197,21 +174,14 @@ class Panel extends JPanel {
 
         janela.add(listaScroll.get(contadorPanel));
         tPane.addTab("title", janela);
-<<<<<<< HEAD
-=======
         tPane.setSelectedIndex(contadorPanel);
->>>>>>> 85a43a6 (Correçao dos arquivos)
 
         contadorPanel++;
         existePanel = true;
 
     }
 
-<<<<<<< HEAD
-    private int contadorPanel = 0; //Conta quantos paineis foram criados
-=======
     private int contadorPanel; //Conta quantos paineis foram criados
->>>>>>> 85a43a6 (Correçao dos arquivos)
     private boolean existePanel = false; //Verifica se existe algum painel criado
     private JTabbedPane tPane;
     private JPanel janela;
