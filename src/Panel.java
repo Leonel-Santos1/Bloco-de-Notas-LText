@@ -1,12 +1,21 @@
 import javax.swing.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 
 
 class Panel extends JPanel {
+    private int contadorPanel = 0; //Conta quantos paineis foram criados
+    private boolean existePanel = false; //Verifica se existe algum painel criado
+    private JTabbedPane tPane;
+    private JPanel janela;
+    //private JTextPane areaTexto;
+    private ArrayList<JTextPane> listaAreaTexto;
+    private ArrayList<JScrollPane> listaScroll;
+    private ArrayList<File> listFile;
+    private JMenuBar menuBar;
+    private JMenu arquivo, editar, selecao, ver, aparencia;
+    private JMenuItem elementoItem;
+
     public Panel() {
 
         //-----------Menu-----------
@@ -30,7 +39,7 @@ class Panel extends JPanel {
         criaItem("Abrir Arquivo", "arquivo", "abrir");
         criaItem("Salvar", "arquivo", "salvar");
         criaItem("Salvar Como", "arquivo", "salvarComo");
-        criaItem("Fechar", "arquivo", "fechar");
+        criaItem("Fechar LText", "arquivo", "fechar");
         //-----------------------------------------------
 
         //-----------Elementos do Menu Editar-----------
@@ -125,11 +134,7 @@ class Panel extends JPanel {
                                             //Seleciona o panel que já tem o arquivo aberto
                                             tPane.setSelectedIndex(i); //É passado o parametro da posição do panel que tem o diretorio
 
-                                            listaAreaTexto.remove(tPane.getTabCount() - 1);
-                                            listaScroll.remove(tPane.getTabCount() - 1);
-                                            listFile.remove(tPane.getTabCount() - 1);
-                                            tPane.remove(tPane.getTabCount() - 1);
-                                            contadorPanel--;
+                                            excluiPanel();
                                             break;
                                         }
                                     }
@@ -144,18 +149,33 @@ class Panel extends JPanel {
 
                             int seleccion = tPane.getSelectedIndex();
                             if (seleccion != -1) {
-                                listaAreaTexto.remove(tPane.getTabCount() - 1);
-                                listaScroll.remove(tPane.getTabCount() - 1);
-                                listFile.remove(tPane.getTabCount() - 1);
-                                tPane.remove(tPane.getTabCount() - 1);
-                                contadorPanel--;
+                                excluiPanel();
                             }
 
                         }
 
                     });
+                } else if (acao.equals("salvar")) {
+                    elementoItem.addActionListener(e -> {
+                        //Se o arquivo não existe, ele irá salvar como
+                        if (listFile.get(tPane.getSelectedIndex()).getPath().equals("")) {
+                            //Pergunta qual diretório o usuário deseja salvar o arquivo
+                            arquivoSalvarComo();
+                        } else {
+                            //Se já existente apenas escreve no local onde o arquivo está
+                            arquivoSalvar();
+                        }
+                    });
+                } else if (acao.equals("salvarComo")) {
+                    elementoItem.addActionListener(e -> {
+                        arquivoSalvarComo();
+                    });
+
+                } else if (acao.equals("fechar")) {
+                    elementoItem.addActionListener(e -> System.exit(0));
                 }
             }
+
             case "editar" -> editar.add(elementoItem);
             case "selecao" -> selecao.add(elementoItem);
             case "ver" -> ver.add(elementoItem);
@@ -163,6 +183,7 @@ class Panel extends JPanel {
         }
 
     }
+
 
 
     public void createPanel() {
@@ -181,15 +202,43 @@ class Panel extends JPanel {
 
     }
 
-    private int contadorPanel; //Conta quantos paineis foram criados
-    private boolean existePanel = false; //Verifica se existe algum painel criado
-    private JTabbedPane tPane;
-    private JPanel janela;
-    //private JTextPane areaTexto;
-    private ArrayList<JTextPane> listaAreaTexto;
-    private ArrayList<JScrollPane> listaScroll;
-    private ArrayList<File> listFile;
-    private JMenuBar menuBar;
-    private JMenu arquivo, editar, selecao, ver, aparencia;
-    private JMenuItem elementoItem;
+    public void excluiPanel() {
+        listaAreaTexto.remove(tPane.getTabCount() - 1);
+        listaScroll.remove(tPane.getTabCount() - 1);
+        listFile.remove(tPane.getTabCount() - 1);
+        tPane.remove(tPane.getTabCount() - 1);
+        contadorPanel--;
+    }
+
+    public void arquivoSalvarComo() {
+        //Pergunta qual diretório o usuário deseja salvar o arquivo
+        JFileChooser salvarArquivo = new JFileChooser();
+        int opcao = salvarArquivo.showSaveDialog(null);
+
+        if (opcao == JFileChooser.APPROVE_OPTION) {
+            File fArquivo = salvarArquivo.getSelectedFile();
+            listFile.set(tPane.getSelectedIndex(), fArquivo);
+            tPane.setTitleAt(tPane.getSelectedIndex(), fArquivo.getName());
+
+            arquivoSalvar();
+        }
+    }
+
+    public void arquivoSalvar() {
+        //Função para salvar o arquivo. Ela lê cada linha e escreve no diretório do arquivo onde será salvo
+        try {
+            FileWriter fw = new FileWriter(listFile.get(tPane.getSelectedIndex()).getPath());
+            String texto = listaAreaTexto.get(tPane.getSelectedIndex()).getText();
+
+            for (int i = 0; i < texto.length(); i++) {
+                fw.write(texto.charAt(i));
+            }
+
+            fw.close();
+
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
 }
