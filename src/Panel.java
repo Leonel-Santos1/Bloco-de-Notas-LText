@@ -1,21 +1,25 @@
 import javax.swing.*;
+import javax.swing.text.DefaultEditorKit;
+import javax.swing.undo.UndoManager;
 import java.io.*;
 import java.util.ArrayList;
 
 
 class Panel extends JPanel {
+    //---------------------Declaração de variáveis--------------------------------
     private int contadorPanel = 0; //Conta quantos paineis foram criados
-    private boolean existePanel = false; //Verifica se existe algum painel criado
+    public boolean existePanel = false; //Verifica se existe algum painel criado
     private JTabbedPane tPane;
     private JPanel janela;
     //private JTextPane areaTexto;
     private ArrayList<JTextPane> listaAreaTexto;
     private ArrayList<JScrollPane> listaScroll;
-    private ArrayList<File> listFile;
+    private ArrayList<File> listaFile;
+    private ArrayList<UndoManager> listaManager;
     private JMenuBar menuBar;
     private JMenu arquivo, editar, selecao, ver, aparencia;
     private JMenuItem elementoItem;
-
+    //----------------------------------------------------------------------------
     public Panel() {
 
         //-----------Menu-----------
@@ -43,12 +47,12 @@ class Panel extends JPanel {
         //-----------------------------------------------
 
         //-----------Elementos do Menu Editar-----------
-        criaItem("Desfazer", "editar", "");
-        criaItem("Refazer", "editar", "");
+        criaItem("Desfazer", "editar", "desfazer");
+        criaItem("Refazer", "editar", "refazer");
         editar.addSeparator();
-        criaItem("Recortar", "editar", "");
-        criaItem("Copiar", "editar", "");
-        criaItem("Colar", "editar", "");
+        criaItem("Cortar", "editar", "cortar");
+        criaItem("Copiar", "editar", "copiar");
+        criaItem("Colar", "editar", "colar");
         //-----------------------------------------------
 
         //-----------Elementos do Menu Seleção-----------
@@ -63,12 +67,17 @@ class Panel extends JPanel {
         //-----------------------------------------------
 
         panelMenu.add(menuBar);
+
+        //------------------------------------------------
+
+
         //------Area de Texto-------
         tPane = new JTabbedPane();
 
-        listFile = new ArrayList<File>();
+        listaFile = new ArrayList<File>();
         listaAreaTexto = new ArrayList<JTextPane>();
         listaScroll = new ArrayList<JScrollPane>();
+        listaManager = new ArrayList<UndoManager>();
         //--------------------------
 
         add(panelMenu);
@@ -82,10 +91,9 @@ class Panel extends JPanel {
         switch (menu) {
             case "arquivo" -> {
                 arquivo.add(elementoItem);
-                if (acao.equals("novo")) {
-                    elementoItem.addActionListener(e -> createPanel());
-                } else if (acao.equals("abrir")) {
-                    elementoItem.addActionListener(e -> {
+                switch (acao) {
+                    case "novo" -> elementoItem.addActionListener(e -> createPanel());
+                    case "abrir" -> elementoItem.addActionListener(e -> {
                         createPanel();
 
                         JFileChooser selecaoDeArquivo = new JFileChooser();
@@ -97,22 +105,22 @@ class Panel extends JPanel {
                                 boolean existePath = false;
                                 for (int i = 0; i < tPane.getTabCount(); i++) {
                                     File f = selecaoDeArquivo.getSelectedFile();
-                                    if (listFile.get(i).getPath().equals(f.getPath())) {
+                                    if (listaFile.get(i).getPath().equals(f.getPath())) {
                                         existePath = true;
                                     }
                                 }
 
                                 if (!existePath) {
                                     File archivo = selecaoDeArquivo.getSelectedFile();
-                                    listFile.set(tPane.getSelectedIndex(), archivo);
+                                    listaFile.set(tPane.getSelectedIndex(), archivo);
 
-                                    FileReader entrada = new FileReader(listFile.get(tPane.getSelectedIndex()).getPath());
+                                    FileReader entrada = new FileReader(listaFile.get(tPane.getSelectedIndex()).getPath());
 
                                     BufferedReader miBuffer = new BufferedReader(entrada);
                                     String linha = "";
 
                                     //O título da aba é o nome do arquivo do usuário
-                                    String titulo = listFile.get(tPane.getSelectedIndex()).getName();
+                                    String titulo = listaFile.get(tPane.getSelectedIndex()).getName();
 
                                     //Nossa área de texto, onde irá o texto do arquivo que o usuário selecionou
                                     tPane.setTitleAt(tPane.getSelectedIndex(), titulo);
@@ -130,7 +138,7 @@ class Panel extends JPanel {
                                     //e selecionar o arquivo e esse panel
                                     for (int i = 0; i < tPane.getTabCount(); i++) {
                                         File f = selecaoDeArquivo.getSelectedFile();
-                                        if (listFile.get(i).getPath().equals(f.getPath())) {
+                                        if (listaFile.get(i).getPath().equals(f.getPath())) {
                                             //Seleciona o panel que já tem o arquivo aberto
                                             tPane.setSelectedIndex(i); //É passado o parametro da posição do panel que tem o diretorio
 
@@ -155,10 +163,9 @@ class Panel extends JPanel {
                         }
 
                     });
-                } else if (acao.equals("salvar")) {
-                    elementoItem.addActionListener(e -> {
+                    case "salvar" -> elementoItem.addActionListener(e -> {
                         //Se o arquivo não existe, ele irá salvar como
-                        if (listFile.get(tPane.getSelectedIndex()).getPath().equals("")) {
+                        if (listaFile.get(tPane.getSelectedIndex()).getPath().equals("")) {
                             //Pergunta qual diretório o usuário deseja salvar o arquivo
                             arquivoSalvarComo();
                         } else {
@@ -166,17 +173,34 @@ class Panel extends JPanel {
                             arquivoSalvar();
                         }
                     });
-                } else if (acao.equals("salvarComo")) {
-                    elementoItem.addActionListener(e -> {
-                        arquivoSalvarComo();
-                    });
+                    case "salvarComo" -> elementoItem.addActionListener(e -> arquivoSalvarComo());
 
-                } else if (acao.equals("fechar")) {
-                    elementoItem.addActionListener(e -> System.exit(0));
+                    case "fechar" -> elementoItem.addActionListener(e -> System.exit(0));
                 }
             }
 
-            case "editar" -> editar.add(elementoItem);
+            case "editar" -> {
+                editar.add(elementoItem);
+                switch (acao){
+                    case "desfazer" -> elementoItem.addActionListener(e -> {
+                        if(listaManager.get(tPane.getSelectedIndex()).canUndo()){
+                            listaManager.get(tPane.getSelectedIndex()).undo();
+                        }
+                    });
+
+                    case "refazer" -> elementoItem.addActionListener(e ->{
+                        if(listaManager.get(tPane.getSelectedIndex()).canRedo()){
+                            listaManager.get(tPane.getSelectedIndex()).redo();
+                        }
+                    });
+
+                    case "cortar" -> elementoItem.addActionListener(new DefaultEditorKit.CutAction());
+
+                    case "copiar" -> elementoItem.addActionListener(new DefaultEditorKit.CopyAction());
+
+                    case "colar" -> elementoItem.addActionListener(new DefaultEditorKit.PasteAction());
+                }
+            }
             case "selecao" -> selecao.add(elementoItem);
             case "ver" -> ver.add(elementoItem);
             case "aparencia" -> aparencia.add(elementoItem);
@@ -185,13 +209,16 @@ class Panel extends JPanel {
     }
 
 
-
+    //---------------Métodos utilizados dentro do código----------------------
     public void createPanel() {
         janela = new JPanel();
 
-        listFile.add(new File(""));
+        listaFile.add(new File(""));
         listaAreaTexto.add(new JTextPane());
         listaScroll.add(new JScrollPane(listaAreaTexto.get(contadorPanel)));
+        listaManager.add(new UndoManager()); //Serve para rastrear as ações da área de texto
+
+        listaAreaTexto.get(contadorPanel).getDocument().addUndoableEditListener(listaManager.get(contadorPanel));
 
         janela.add(listaScroll.get(contadorPanel));
         tPane.addTab("title", janela);
@@ -205,7 +232,7 @@ class Panel extends JPanel {
     public void excluiPanel() {
         listaAreaTexto.remove(tPane.getTabCount() - 1);
         listaScroll.remove(tPane.getTabCount() - 1);
-        listFile.remove(tPane.getTabCount() - 1);
+        listaFile.remove(tPane.getTabCount() - 1);
         tPane.remove(tPane.getTabCount() - 1);
         contadorPanel--;
     }
@@ -217,7 +244,7 @@ class Panel extends JPanel {
 
         if (opcao == JFileChooser.APPROVE_OPTION) {
             File fArquivo = salvarArquivo.getSelectedFile();
-            listFile.set(tPane.getSelectedIndex(), fArquivo);
+            listaFile.set(tPane.getSelectedIndex(), fArquivo);
             tPane.setTitleAt(tPane.getSelectedIndex(), fArquivo.getName());
 
             arquivoSalvar();
@@ -227,7 +254,7 @@ class Panel extends JPanel {
     public void arquivoSalvar() {
         //Função para salvar o arquivo. Ela lê cada linha e escreve no diretório do arquivo onde será salvo
         try {
-            FileWriter fw = new FileWriter(listFile.get(tPane.getSelectedIndex()).getPath());
+            FileWriter fw = new FileWriter(listaFile.get(tPane.getSelectedIndex()).getPath());
             String texto = listaAreaTexto.get(tPane.getSelectedIndex()).getText();
 
             for (int i = 0; i < texto.length(); i++) {
@@ -240,5 +267,5 @@ class Panel extends JPanel {
             throw new RuntimeException(ex);
         }
     }
-
+    //-----------------------------------------------------------------------
 }
