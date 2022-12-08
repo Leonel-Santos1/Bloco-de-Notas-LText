@@ -42,7 +42,7 @@ public class Utilidades {
 
     //----------------------Aparencia da janela-----------------------------
 
-    public static void mudarAparencia(int contador, String tipo, ArrayList<JTextPane> listAreaTexto) {
+    public static void mudarAparencia(int contador, String tipo, int tamanho, ArrayList<JTextPane> listAreaTexto) {
         if (tipo.equals("w")) {
             for (int i = 0; i < contador; i++) {
 
@@ -55,6 +55,10 @@ public class Utilidades {
 
                 //O estilo do texto
                 aset = sc.addAttribute(aset, StyleConstants.FontFamily, "Arial");
+
+                //Para o tamanho do texto
+
+                aset = sc.addAttribute(aset, StyleConstants.FontSize, tamanho);
 
                 listAreaTexto.get(i).setCharacterAttributes(aset, false);
                 listAreaTexto.get(i).setBackground(Color.WHITE);
@@ -72,6 +76,10 @@ public class Utilidades {
                 //O estilo do texto
                 aset = sc.addAttribute(aset, StyleConstants.FontFamily, "Arial");
 
+                //Para o tamanho do texto
+
+                aset = sc.addAttribute(aset, StyleConstants.FontSize, tamanho);
+
                 listAreaTexto.get(i).setCharacterAttributes(aset, false);
                 listAreaTexto.get(i).setBackground(new Color(77, 77, 77));
 
@@ -82,13 +90,47 @@ public class Utilidades {
 
     //----------------------Botão------------------------------------------
 
-    public static JButton adicionaButao(URL url, Object objContainer, String rotulo){
+    public static JButton adicionaButao(URL url, Object objContainer, String rotulo) {
         JButton botao = new JButton(new ImageIcon(new ImageIcon(url).getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH)));
         botao.setToolTipText(rotulo);
         ((Container) objContainer).add(botao);
         return botao;
     }
-
-
     //---------------------------------------------------------------------
+
+
+    //--------------------Tamanho Fonte------------------------------------
+
+    public static void tamanhoTexto(int tamanho, int contador, ArrayList<JTextPane> listAreaTexto) {
+        for (int i = 0; i < contador; i++) {
+            //Seleciona todo o texto
+            listAreaTexto.get(i).selectAll();
+
+            //
+            StyleContext sc = StyleContext.getDefaultStyleContext();
+
+            //Para pegar o tamanho do texto
+            AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.FontSize, tamanho);
+
+            //Aplicar o tamanho do texto
+            listAreaTexto.get(i).setCharacterAttributes(aset, false);
+        }
+    }
+    //---------------------------------------------------------------------
+
+    //--------------------Métodos de bloqueio e desbloqueio de itens da janela---------------------
+
+    public static void ativaItens(JMenuItem j[]) {
+        for(JMenuItem item : j) {
+            item.setEnabled(true);
+        }
+    }
+
+    public static void desativaItens(JMenuItem j[]) {
+        for(JMenuItem item : j) {
+            item.setEnabled(false);
+        }
+    }
+    //---------------------------------------------------------------------------------------------
 }
+
