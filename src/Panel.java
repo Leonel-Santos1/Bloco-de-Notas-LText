@@ -330,7 +330,7 @@ class Panel extends JPanel {
     }
 
 
-    //---------------Métodos utilizados dentro do código da Janela----------------------
+    //---------------Métodos utilizados dentro do código da Janela-----------------------
     public void createPanel() {
         janela = new JPanel();
         janela.setLayout(new BorderLayout());
