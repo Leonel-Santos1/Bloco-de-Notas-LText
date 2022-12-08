@@ -1,17 +1,23 @@
 import javax.swing.*;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.undo.UndoManager;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.*;
+import java.net.URL;
 import java.util.ArrayList;
 
 
 class Panel extends JPanel {
     //---------------------Declaração de variáveis--------------------------------
+    private String tipoFundo = "w";
     public boolean numeracao = false;
     private int contadorPanel = 0; //Conta quantos paineis foram criados
     public boolean existePanel = false; //Verifica se existe algum painel criado
     private JTabbedPane tPane;
     private JPanel janela;
+    private JPanel novoPanel;
     //private JTextPane areaTexto;
     private ArrayList<JTextPane> listaAreaTexto;
     private ArrayList<JScrollPane> listaScroll;
@@ -20,14 +26,21 @@ class Panel extends JPanel {
     private JMenuBar menuBar;
     private JMenu arquivo, editar, selecao, ver, aparencia;
     private JMenuItem elementoItem;
-    //----------------------------------------------------------------------------
-    public Panel() {
+    private JToolBar ferramentas;
+    private URL url;
 
+    private boolean estadoLabelFixo = false;
+    private JLabel labelFixo;
+
+    //----------------------------------------------------------------------------
+    public Panel(JFrame ExibicaoJanela) {
+        BorderLayout border = new BorderLayout();
+        setLayout(border);
         //-----------Menu-----------
         JPanel panelMenu = new JPanel();
+        panelMenu.setLayout(new BorderLayout());
 
         menuBar = new JMenuBar();
-
         arquivo = new JMenu("Arquivo");
         editar = new JMenu("Editar");
         selecao = new JMenu("Seleção");
@@ -63,11 +76,11 @@ class Panel extends JPanel {
         //-----------Elementos do Menu Ver-----------
         criaItem("Numeração de Linhas", "ver", "numeracao");
         ver.add(aparencia);
-        criaItem("Modo Claro", "aparencia", "");
-        criaItem("Modo Escuro", "aparencia", "");
+        criaItem("Modo Claro", "aparencia", "claro");
+        criaItem("Modo Escuro", "aparencia", "noturno");
         //-----------------------------------------------
 
-        panelMenu.add(menuBar);
+        panelMenu.add(menuBar, BorderLayout.NORTH);
 
         //------------------------------------------------
 
@@ -81,8 +94,85 @@ class Panel extends JPanel {
         listaManager = new ArrayList<UndoManager>();
         //--------------------------
 
-        add(panelMenu);
-        add(tPane);
+        //------Barra Ferramentas-------
+
+        ferramentas = new JToolBar(JToolBar.VERTICAL);
+        url = Panel.class.getResource("/imagens/close.png");
+        Utilidades.adicionaButao(url, ferramentas, "Fechar Janela Atual").addActionListener(e -> {
+            int selecao = tPane.getSelectedIndex();
+
+            if (selecao != -1) {
+                //Se existem janelas abertas eliminamos a janela selecionada
+                listaScroll.get(tPane.getSelectedIndex()).setRowHeader(null);
+                tPane.remove(selecao);
+                listaAreaTexto.remove(selecao);
+                listaScroll.remove(selecao);
+                listaManager.remove(selecao);
+                listaFile.remove(selecao);
+                contadorPanel--;
+
+                if (tPane.getSelectedIndex() == -1) {
+                    existePanel = false; //Se tPane retornar -1 significa que não existe mais nenhum painel
+                }
+            }
+        });
+
+        url = Panel.class.getResource("/imagens/add.png");
+        Utilidades.adicionaButao(url, ferramentas, "Novo Arquivo").addActionListener(e -> createPanel());
+        //------------------------------
+
+        //-------Novo Panel extra-------
+
+        novoPanel = new JPanel();
+        novoPanel.setLayout(new BorderLayout());
+
+        JPanel panelEsquerdo = new JPanel();
+        labelFixo = new JLabel();
+        url = Panel.class.getResource("/imagens/alfiler.png");
+        labelFixo.setIcon(new ImageIcon(new ImageIcon(url).getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH)));
+        labelFixo.addMouseListener(new MouseAdapter() {
+            //Quando o curso fica em cima do label, ele muda a imagem
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                url = Panel.class.getResource("/imagens/alfilerseleccion.png");
+                labelFixo.setIcon(new ImageIcon(new ImageIcon(url).getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH)));
+                super.mouseEntered(e);
+            }
+
+            //Quando o cursor sai do label, ele muda a imagem
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (estadoLabelFixo) {
+                    url = Panel.class.getResource("/imagens/alfilerseleccion.png");
+                    labelFixo.setIcon(new ImageIcon(new ImageIcon(url).getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH)));
+                } else {
+                    url = Panel.class.getResource("/imagens/alfiler.png");
+                    labelFixo.setIcon(new ImageIcon(new ImageIcon(url).getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH)));
+                }
+                super.mouseExited(e);
+            }
+
+            //Quando o cursor clica no label, ele muda a imagem
+            @Override
+            public void mousePressed(MouseEvent e) {
+                estadoLabelFixo = !estadoLabelFixo;
+                ExibicaoJanela.setAlwaysOnTop(estadoLabelFixo);
+                super.mousePressed(e);
+            }
+        });
+        panelEsquerdo.add(labelFixo);
+
+        JPanel panelDireito = new JPanel();
+
+        novoPanel.add(panelEsquerdo, BorderLayout.WEST);
+        novoPanel.add(panelDireito, BorderLayout.EAST);
+
+        //------------------------------
+
+        add(panelMenu, BorderLayout.NORTH);
+        add(tPane, BorderLayout.CENTER);
+        add(ferramentas, BorderLayout.WEST);
+        add(novoPanel, BorderLayout.SOUTH);
     }
 
     //Função para criar os itens do menu de forma mais prática
@@ -132,7 +222,7 @@ class Panel extends JPanel {
                                             Utilidades.append(linha + "\n", listaAreaTexto.get(tPane.getSelectedIndex()));
                                         }
                                     }
-
+                                    Utilidades.mudarAparencia(contadorPanel, tipoFundo, listaAreaTexto);
                                 } else {
                                     //Se o diretório do arquivo já existe y está aberto
                                     //O laço for irá percorrer todos os panels para ver qual deles tem o mesmo diretório
@@ -182,15 +272,15 @@ class Panel extends JPanel {
 
             case "editar" -> {
                 editar.add(elementoItem);
-                switch (acao){
+                switch (acao) {
                     case "desfazer" -> elementoItem.addActionListener(e -> {
-                        if(listaManager.get(tPane.getSelectedIndex()).canUndo()){
+                        if (listaManager.get(tPane.getSelectedIndex()).canUndo()) {
                             listaManager.get(tPane.getSelectedIndex()).undo();
                         }
                     });
 
-                    case "refazer" -> elementoItem.addActionListener(e ->{
-                        if(listaManager.get(tPane.getSelectedIndex()).canRedo()){
+                    case "refazer" -> elementoItem.addActionListener(e -> {
+                        if (listaManager.get(tPane.getSelectedIndex()).canRedo()) {
                             listaManager.get(tPane.getSelectedIndex()).redo();
                         }
                     });
@@ -204,21 +294,37 @@ class Panel extends JPanel {
             }
             case "selecao" -> {
                 selecao.add(elementoItem);
-                switch (acao){
-                    case "selecionarTudo" -> elementoItem.addActionListener(e -> listaAreaTexto.get(tPane.getSelectedIndex()).selectAll());
+                if (acao.equals("selecionarTudo")) {
+                    elementoItem.addActionListener(e -> listaAreaTexto.get(tPane.getSelectedIndex()).selectAll());
                 }
             }
             case "ver" -> {
                 ver.add(elementoItem);
-                switch(acao){
-                    case "numeracao" -> elementoItem.addActionListener(e ->{
+                if (acao.equals("numeracao")) {
+                    elementoItem.addActionListener(e -> {
                         numeracao = !numeracao;
                         Utilidades.verNumeracao(contadorPanel, numeracao, listaAreaTexto, listaScroll);
                     });
                 }
             }
 
-            case "aparencia" -> aparencia.add(elementoItem);
+            case "aparencia" -> {
+                aparencia.add(elementoItem);
+                switch (acao) {
+                    case "claro" -> elementoItem.addActionListener(e -> {
+                        tipoFundo = "w";
+                        if (tPane.getTabCount() > 0) {
+                            Utilidades.mudarAparencia(contadorPanel, tipoFundo, listaAreaTexto);
+                        }
+                    });
+                    case "noturno" -> elementoItem.addActionListener(e -> {
+                        tipoFundo = "d";
+                        if (tPane.getTabCount() > 0) {
+                            Utilidades.mudarAparencia(contadorPanel, tipoFundo, listaAreaTexto);
+                        }
+                    });
+                }
+            }
         }
 
     }
@@ -227,6 +333,7 @@ class Panel extends JPanel {
     //---------------Métodos utilizados dentro do código da Janela----------------------
     public void createPanel() {
         janela = new JPanel();
+        janela.setLayout(new BorderLayout());
 
         listaFile.add(new File(""));
         listaAreaTexto.add(new JTextPane());
@@ -235,7 +342,7 @@ class Panel extends JPanel {
 
         listaAreaTexto.get(contadorPanel).getDocument().addUndoableEditListener(listaManager.get(contadorPanel));
 
-        janela.add(listaScroll.get(contadorPanel));
+        janela.add(listaScroll.get(contadorPanel), BorderLayout.CENTER);
         tPane.addTab("title", janela);
 
         Utilidades.verNumeracaoInicial(numeracao, listaAreaTexto.get(contadorPanel), listaScroll.get(contadorPanel));
@@ -243,6 +350,7 @@ class Panel extends JPanel {
         tPane.setSelectedIndex(contadorPanel);
 
         contadorPanel++;
+        Utilidades.mudarAparencia(contadorPanel, tipoFundo, listaAreaTexto);
         existePanel = true;
 
     }
